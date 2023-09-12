@@ -153,6 +153,10 @@ func extractVersion(branch string) (*version.Version) {
 			return version
 		}
 	}
+  version, err := version.NewVersion("0")
+  if err == nil {
+    return version
+  }
   return nil
 }
 
