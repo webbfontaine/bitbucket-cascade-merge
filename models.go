@@ -148,14 +148,21 @@ func (c *Cascade) Slice(startBranch string) {
 func extractVersion(branch string) (*version.Version) {
 	parts := strings.Split(strings.ReplaceAll(branch, "version_", ""), "/")
 	if len(parts) > 0 {
-		version, err := version.NewVersion(parts[len(parts)-1])
+		version, err := version.NewSemver(parts[len(parts)-1])
 		if err == nil {
 			return version
 		}
 	}
-  version, err := version.NewVersion("0")
-  if err == nil {
-    return version
+  if branch == "devel" {
+    version, err := version.NewVersion("99999999")
+    if err == nil {
+      return version
+    }
+  }else {
+    version, err := version.NewVersion("0")
+    if err == nil {
+      return version
+    }
   }
   return nil
 }
