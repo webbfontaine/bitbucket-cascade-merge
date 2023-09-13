@@ -1,11 +1,10 @@
 package main
 
 import (
-	"errors"
-	"math"
-	"sort"
-	"strconv"
-	"strings"
+  "errors"
+  "sort"
+  "strings"
+  "github.com/hashicorp/go-version"
 )
 
 type PullRequestEvent struct {
@@ -141,18 +140,31 @@ func (c *Cascade) Slice(startBranch string) {
 
 // Extract an int representation of the version found in the given branch. Branch must be named accordingly to the
 // following format :
-//     <kind>/<version>
+//
+//	<kind>/<version>
+//
 // The part following the slash must be an int.
 // It returns the version or MaxInt32 if it comply to the format.
-func extractVersion(branch string) int {
-	parts := strings.Split(branch, "/")
+func extractVersion(branch string) (*version.Version) {
+	parts := strings.Split(strings.ReplaceAll(branch, "version_", ""), "/")
 	if len(parts) > 0 {
-		version, err := strconv.Atoi(parts[len(parts)-1])
+		version, err := version.NewSemver(parts[len(parts)-1])
 		if err == nil {
 			return version
 		}
 	}
-	return math.MaxInt32
+  if branch == "devel" {
+    version, err := version.NewVersion("99999999")
+    if err == nil {
+      return version
+    }
+  }else {
+    version, err := version.NewVersion("0")
+    if err == nil {
+      return version
+    }
+  }
+  return nil
 }
 
 type ByVersion []string
@@ -166,7 +178,7 @@ func (b ByVersion) Swap(i, j int) {
 }
 
 func (b ByVersion) Less(i, j int) bool {
-	return extractVersion(b[i]) < extractVersion(b[j])
+	return extractVersion(b[i]).LessThan(extractVersion(b[j]))
 }
 
 func (r *Repository) URL(protocols ...string) (string, error) {

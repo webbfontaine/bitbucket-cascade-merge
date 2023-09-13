@@ -2,7 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
+  "log"
+  "net/http"
 )
 
 type EventHandler struct {
@@ -39,6 +40,7 @@ func (e EventHandler) Handle() http.Handler {
 func (e EventHandler) CheckToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if token != request.URL.Query().Get("token") {
+      log.Printf("Wrong token : %s != %s", token, request.URL.Query().Get("token"))
 			writer.WriteHeader(http.StatusForbidden)
 			return
 		}

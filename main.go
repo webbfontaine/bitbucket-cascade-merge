@@ -14,6 +14,8 @@ func main() {
 	events := make(chan PullRequestEvent, 100)
 	go worker(events)
 
+  log.Printf("Server running on port %s, using token : %s", getEnv("PORT", "5000"), getEnv("TOKEN", ""))
+
 	// start the hook listener
 	handler := NewEventHandler(events)
 	addr := fmt.Sprintf(":%s", getEnv("PORT", "5000"))
@@ -28,6 +30,8 @@ func main() {
 
 func worker(event <-chan PullRequestEvent) {
 	for e := range event {
+
+    log.Printf("Processing cascade merge for %s from %s to %s", e.Repository.Name, e.PullRequest.Source.Branch.Name, e.PullRequest.Destination.Branch.Name)
 
 		// retrieve auth from environment
 		username := getEnv("BITBUCKET_USERNAME", "")
@@ -67,6 +71,7 @@ func worker(event <-chan PullRequestEvent) {
 			continue
 		}
 
+
 		// cascade merge the pull request
 		state := c.CascadeMerge(e.PullRequest.Destination.Branch.Name, opts)
 		if state != nil {
@@ -80,7 +85,9 @@ func worker(event <-chan PullRequestEvent) {
 
 			if err != nil {
 				log.Printf("could not create a pull request %s to %s on %s", state.Source, state.Target, e.Repository.Name)
-			}
+			}else{
+        log.Printf("Pull request created from %s to %s on %s", state.Source, state.Target, e.Repository.Name)
+      }
 		}
 
 	}
