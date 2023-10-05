@@ -88,9 +88,9 @@ func worker(event <-chan PullRequestEvent) {
 				} else {
 					log.Printf("Pull request created from %s to %s on %s", state.Source, state.Target, e.Repository.Name)
 				}
-			}else{
-        log.Printf("Error while doing cascade merge for repo %s : %s", e.Repository.Name, state.error)
-      }
+			} else {
+				log.Printf("Error while doing cascade merge for repo %s : %s", e.Repository.Name, state.error)
+			}
 		}
 	}
 }

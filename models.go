@@ -1,10 +1,10 @@
 package main
 
 import (
-  "errors"
-  "sort"
-  "strings"
-  "github.com/hashicorp/go-version"
+	"errors"
+	"github.com/hashicorp/go-version"
+	"sort"
+	"strings"
 )
 
 type PullRequestEvent struct {
@@ -145,7 +145,7 @@ func (c *Cascade) Slice(startBranch string) {
 //
 // The part following the slash must be an int.
 // It returns the version or MaxInt32 if it comply to the format.
-func extractVersion(branch string) (*version.Version) {
+func extractVersion(branch string) *version.Version {
 	parts := strings.Split(strings.ReplaceAll(branch, "version_", ""), "/")
 	if len(parts) > 0 {
 		version, err := version.NewSemver(parts[len(parts)-1])
@@ -153,18 +153,18 @@ func extractVersion(branch string) (*version.Version) {
 			return version
 		}
 	}
-  if branch == "devel" {
-    version, err := version.NewVersion("99999999")
-    if err == nil {
-      return version
-    }
-  }else {
-    version, err := version.NewVersion("0")
-    if err == nil {
-      return version
-    }
-  }
-  return nil
+	if branch == "devel" {
+		version, err := version.NewVersion("99999999")
+		if err == nil {
+			return version
+		}
+	} else {
+		version, err := version.NewVersion("0")
+		if err == nil {
+			return version
+		}
+	}
+	return nil
 }
 
 type ByVersion []string

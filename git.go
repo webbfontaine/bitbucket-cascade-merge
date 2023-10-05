@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/libgit2/git2go/v34"
-  "log"
-  "strings"
+	"log"
+	"strings"
 	"time"
 )
 
@@ -72,7 +72,7 @@ func (c *Client) CascadeMerge(branchName string, options *CascadeOptions) *Casca
 
 	for target := cascade.Next(); target != ""; target = cascade.Next() {
 		err = c.Checkout(target)
-    log.Printf("Merging %s => %s", source, target)
+		log.Printf("Merging %s => %s", source, target)
 		if err != nil {
 			return &CascadeMergeState{Source: source, Target: target, error: err}
 		}
