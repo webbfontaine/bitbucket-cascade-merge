@@ -14,7 +14,7 @@ func main() {
 	events := make(chan PullRequestEvent, 100)
 	go worker(events)
 
-  log.Printf("Server running on port %s, using token : %s", getEnv("PORT", "5000"), getEnv("TOKEN", ""))
+	log.Printf("Server running on port %s, using token : %s", getEnv("PORT", "5000"), getEnv("TOKEN", ""))
 
 	// start the hook listener
 	handler := NewEventHandler(events)
@@ -31,7 +31,7 @@ func main() {
 func worker(event <-chan PullRequestEvent) {
 	for e := range event {
 
-    log.Printf("Processing cascade merge for %s from %s to %s", e.Repository.Name, e.PullRequest.Source.Branch.Name, e.PullRequest.Destination.Branch.Name)
+		log.Printf("Processing cascade merge for %s from %s to %s", e.Repository.Name, e.PullRequest.Source.Branch.Name, e.PullRequest.Destination.Branch.Name)
 
 		// retrieve auth from environment
 		username := getEnv("BITBUCKET_USERNAME", "")
@@ -71,24 +71,26 @@ func worker(event <-chan PullRequestEvent) {
 			continue
 		}
 
-
 		// cascade merge the pull request
 		state := c.CascadeMerge(e.PullRequest.Destination.Branch.Name, opts)
 		if state != nil {
 
-			// create a new pull request when cascade fails
-			err := api.CreatePullRequest(
-				"Automatic merge failure",
-				"There was a merge conflict automatically merging this branch",
-				state.Source,
-				state.Target)
+			if state.Source != "" && state.Target != "" {
+				// create a new pull request when cascade fails
+				err := api.CreatePullRequest(
+					"Automatic merge failure",
+					"There was a merge conflict automatically merging this branch",
+					state.Source,
+					state.Target)
 
-			if err != nil {
-				log.Printf("could not create a pull request %s to %s on %s", state.Source, state.Target, e.Repository.Name)
+				if err != nil {
+					log.Printf("could not create a pull request %s to %s on %s", state.Source, state.Target, e.Repository.Name)
+				} else {
+					log.Printf("Pull request created from %s to %s on %s", state.Source, state.Target, e.Repository.Name)
+				}
 			}else{
-        log.Printf("Pull request created from %s to %s on %s", state.Source, state.Target, e.Repository.Name)
+        log.Printf("Error while doing cascade merge for repo %s : %s", e.Repository.Name, state.Error())
       }
 		}
-
 	}
 }
