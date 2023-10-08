@@ -144,27 +144,26 @@ func (c *Cascade) Slice(startBranch string) {
 //	<kind>/<version>
 //
 // The part following the slash must be an int.
-// It returns the version or MaxInt32 if it comply to the format.
+// It returns the version or Version("0") if it not complies to the format.
 func extractVersion(branch string) *version.Version {
 	parts := strings.Split(strings.ReplaceAll(branch, "version_", ""), "/")
 	if len(parts) > 0 {
-		version, err := version.NewSemver(parts[len(parts)-1])
+		semver, err := version.NewSemver(parts[len(parts)-1])
 		if err == nil {
-			return version
+			return semver
 		}
 	}
+
 	if branch == "devel" {
-		version, err := version.NewVersion("99999999")
+		semver, err := version.NewVersion("99999999")
 		if err == nil {
-			return version
-		}
-	} else {
-		version, err := version.NewVersion("0")
-		if err == nil {
-			return version
+			return semver
 		}
 	}
-	return nil
+
+	semver, _ := version.NewVersion("0")
+
+	return semver
 }
 
 type ByVersion []string

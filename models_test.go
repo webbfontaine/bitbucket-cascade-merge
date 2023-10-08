@@ -1,7 +1,8 @@
 package main
 
 import (
-	"math"
+	"fmt"
+	"github.com/hashicorp/go-version"
 	"reflect"
 	"testing"
 )
@@ -114,7 +115,7 @@ func TestCascade_Append(t *testing.T) {
 		want   []string
 	}{
 		{name: "SortNumeric", fields: fields{BranchNames: []string{"release/3", "release/2"}}, want: []string{"release/2", "release/3"}},
-		{name: "SortDevelop", fields: fields{BranchNames: []string{"develop", "release/3"}}, want: []string{"release/3", "develop"}},
+		{name: "SortDevel", fields: fields{BranchNames: []string{"devel", "release/3"}}, want: []string{"release/3", "devel"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -142,9 +143,9 @@ func TestCascade_Slice(t *testing.T) {
 		fields fields
 		want   []string
 	}{
-		{name: "Unbound", fields: fields{BranchNames: []string{"release/3", "release/2"}, TargetBranch: "develop"}, want: []string{}},
-		{name: "BoundLast", fields: fields{BranchNames: []string{"develop", "release/3"}, TargetBranch: "develop"}, want: []string{"develop"}},
-		{name: "BoundFirst", fields: fields{BranchNames: []string{"develop", "release/2", "release/3"}, TargetBranch: "release/2"}, want: []string{"release/2", "release/3", "develop"}},
+		{name: "Unbound", fields: fields{BranchNames: []string{"release/3", "release/2"}, TargetBranch: "devel"}, want: []string{}},
+		{name: "BoundLast", fields: fields{BranchNames: []string{"devel", "release/3"}, TargetBranch: "devel"}, want: []string{"devel"}},
+		{name: "BoundFirst", fields: fields{BranchNames: []string{"devel", "release/2", "release/3"}, TargetBranch: "release/2"}, want: []string{"release/2", "release/3", "devel"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -163,6 +164,14 @@ func TestCascade_Slice(t *testing.T) {
 	}
 }
 
+func mustNewVersion(v string) *version.Version {
+	ver, err := version.NewVersion(v)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create version: %s", err))
+	}
+	return ver
+}
+
 func Test_extractVersion(t *testing.T) {
 	type args struct {
 		b string
@@ -170,29 +179,37 @@ func Test_extractVersion(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int
+		want *version.Version
 	}{
 		{
-			name: "valid int",
-			args: args{b: "kind/10"},
-			want: 10,
+			name: "valid version",
+			args: args{b: "release/22.1.1"},
+			want: mustNewVersion("22.1.1"),
+		}, {
+			name: "valid version with 'v' prefix",
+			args: args{b: "release/version_22.1.1"},
+			want: mustNewVersion("22.1.1"),
+		}, {
+			name: "valid version with 'v' prefix",
+			args: args{b: "release/v22.1.1"},
+			want: mustNewVersion("22.1.1"),
+		}, {
+			name: "valid devel branch",
+			args: args{b: "devel"},
+			want: mustNewVersion("99999999"),
 		}, {
 			name: "invalid int",
-			args: args{b: "kind/not-int"},
-			want: math.MaxInt32,
-		}, {
-			name: "invalid int (float)",
-			args: args{b: "kind/10.1"},
-			want: math.MaxInt32,
+			args: args{b: "release/not-int"},
+			want: mustNewVersion("0"),
 		}, {
 			name: "invalid format",
 			args: args{b: "invalid format"},
-			want: math.MaxInt32,
+			want: mustNewVersion("0"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := extractVersion(tt.args.b); got != tt.want {
+			if got := extractVersion(tt.args.b); !got.Equal(tt.want) {
 				t.Errorf("extractVersion() = %v, want %v", got, tt.want)
 			}
 		})

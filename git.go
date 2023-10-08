@@ -38,7 +38,7 @@ func (c *Client) CascadeMerge(branchName string, options *CascadeOptions) *Casca
 
 	if options == nil {
 		options = &CascadeOptions{
-			DevelopmentName: "develop",
+			DevelopmentName: "devel",
 			ReleasePrefix:   "release/",
 		}
 	}
@@ -153,7 +153,7 @@ func (c *Client) Commit(message string, path ...string) (*git.Oid, error) {
 }
 
 func (c *Client) Checkout(branchName string) error {
-	checkoutOpts := &git.CheckoutOpts{
+	checkoutOpts := &git.CheckoutOptions{
 		Strategy: git.CheckoutSafe | git.CheckoutRecreateMissing | git.CheckoutAllowConflicts | git.CheckoutUseTheirs,
 	}
 
@@ -220,7 +220,11 @@ func (c *Client) Checkout(branchName string) error {
 		return err
 	}
 	// setting the Head to point to our branch
-	c.Repository.SetHead("refs/heads/" + branchName)
+	err = c.Repository.SetHead("refs/heads/" + branchName)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -271,7 +275,7 @@ func (c *Client) Reset(branchName string) error {
 	}
 	defer commit.Free()
 
-	err = c.Repository.ResetToCommit(commit, git.ResetHard, &git.CheckoutOpts{})
+	err = c.Repository.ResetToCommit(commit, git.ResetHard, &git.CheckoutOptions{})
 	if err != nil {
 		return err
 	}
@@ -290,7 +294,7 @@ func (c *Client) BuildCascade(options *CascadeOptions, startBranch string) (*Cas
 		return nil, err
 	}
 
-	iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
+	err = iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
 		shorthand := branch.Shorthand()
 		branchName := strings.TrimPrefix(shorthand, DefaultRemoteName+"/")
 		if branchName == options.DevelopmentName || strings.HasPrefix(branchName, options.ReleasePrefix) {
@@ -298,6 +302,10 @@ func (c *Client) BuildCascade(options *CascadeOptions, startBranch string) (*Cas
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	cascade.Slice(startBranch)
 
@@ -352,7 +360,7 @@ func (c *Client) MergeBranches(sourceBranchName string, destinationBranchName st
 	mergeOpts.TreeFlags = git.MergeTreeFailOnConflict
 
 	// options for checkout
-	checkoutOpts := &git.CheckoutOpts{
+	checkoutOpts := &git.CheckoutOptions{
 		Strategy: git.CheckoutSafe | git.CheckoutRecreateMissing | git.CheckoutUseTheirs,
 	}
 
@@ -423,7 +431,7 @@ func (c *Client) RemoveLocalBranches() error {
 		return err
 	}
 
-	iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
+	err = iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
 		if DefaultMaster != branch.Shorthand() {
 			err = branch.Delete()
 			if err != nil {
@@ -432,6 +440,10 @@ func (c *Client) RemoveLocalBranches() error {
 		}
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -493,8 +505,8 @@ func (o *ClientOptions) CreateRemoteCallbacks() git.RemoteCallbacks {
 }
 
 func makeCredentialsCallback(username, password string) git.CredentialsCallback {
-	return func(url, u string, ct git.CredType) (*git.Cred, error) {
-		cred, err := git.NewCredUserpassPlaintext(username, password)
+	return func(url, u string, ct git.CredentialType) (*git.Credential, error) {
+		cred, err := git.NewCredentialUserpassPlaintext(username, password)
 		return cred, err
 	}
 }

@@ -8,7 +8,7 @@ RUN cd libgit2-1.5.1 && mkdir build && cd build && cmake .. && make install
 
 COPY . .
 RUN go mod download
-
+RUN go test
 RUN go build -o main .
 
 FROM alpine:edge
