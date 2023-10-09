@@ -123,8 +123,11 @@ func (c *Cascade) Append(branchName string) {
 			return
 		}
 	}
-	c.Branches = append(c.Branches, branchName)
-	sort.Sort(ByVersion(c.Branches))
+  version := extractVersion(branchName)
+  if version.Original() != "0" {
+    c.Branches = append(c.Branches, branchName)
+    sort.Sort(ByVersion(c.Branches))
+  }
 }
 
 // Slice cascade branches to have only the target branch and its following branches.
