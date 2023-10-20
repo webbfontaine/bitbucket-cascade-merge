@@ -431,7 +431,7 @@ func (c *Client) RemoveLocalBranches() error {
 		return err
 	}
 
-	err = iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
+	iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
 		if DefaultMaster != branch.Shorthand() {
 			err = branch.Delete()
 			if err != nil {
@@ -440,10 +440,6 @@ func (c *Client) RemoveLocalBranches() error {
 		}
 		return nil
 	})
-
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
