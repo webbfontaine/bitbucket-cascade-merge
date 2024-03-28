@@ -105,7 +105,7 @@ func TestCascade_Next(t *testing.T) {
 	}
 }
 
-func TestCascade_Append(t *testing.T) {
+func TestCascade_AppendSemVer(t *testing.T) {
 	type fields struct {
 		BranchNames []string
 	}
@@ -114,8 +114,14 @@ func TestCascade_Append(t *testing.T) {
 		fields fields
 		want   []string
 	}{
-		{name: "SortNumeric", fields: fields{BranchNames: []string{"release/3", "release/2"}}, want: []string{"release/2", "release/3"}},
-		{name: "SortDevel", fields: fields{BranchNames: []string{"devel", "release/3"}}, want: []string{"release/3", "devel"}},
+		{name: "SortNumeric",
+			fields: fields{BranchNames: []string{"release/3", "release/2", "release/2.11.6", "release/2.4.6"}},
+			want:   []string{"release/2", "release/2.4.6", "release/2.11.6", "release/3"},
+		},
+		{name: "SortDevel",
+			fields: fields{BranchNames: []string{"devel", "release/3"}},
+			want:   []string{"release/3", "devel"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -124,7 +130,7 @@ func TestCascade_Append(t *testing.T) {
 				Current:  0,
 			}
 			for _, n := range tt.fields.BranchNames {
-				c.Append(n)
+				c.AppendSemVer(n)
 			}
 			if !reflect.DeepEqual(c.Branches, tt.want) {
 				t.Errorf("Next() = %v, want %v", c.Branches, tt.want)
@@ -143,9 +149,19 @@ func TestCascade_Slice(t *testing.T) {
 		fields fields
 		want   []string
 	}{
-		{name: "Unbound", fields: fields{BranchNames: []string{"release/3", "release/2"}, TargetBranch: "devel"}, want: []string{}},
-		{name: "BoundLast", fields: fields{BranchNames: []string{"devel", "release/3"}, TargetBranch: "devel"}, want: []string{"devel"}},
-		{name: "BoundFirst", fields: fields{BranchNames: []string{"devel", "release/2", "release/3"}, TargetBranch: "release/2"}, want: []string{"release/2", "release/3", "devel"}},
+		{
+			name:   "Unbound",
+			fields: fields{BranchNames: []string{"release/3", "release/2"}, TargetBranch: "devel"},
+			want:   []string{},
+		},
+		{name: "BoundLast",
+			fields: fields{BranchNames: []string{"devel", "release/3"}, TargetBranch: "devel"},
+			want:   []string{"devel"},
+		},
+		{name: "BoundFirst",
+			fields: fields{BranchNames: []string{"devel", "release/2", "release/3"}, TargetBranch: "release/2"},
+			want:   []string{"release/2", "release/3", "devel"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -154,7 +170,7 @@ func TestCascade_Slice(t *testing.T) {
 				Current:  0,
 			}
 			for _, n := range tt.fields.BranchNames {
-				c.Append(n)
+				c.AppendSemVer(n)
 			}
 			c.Slice(tt.fields.TargetBranch)
 			if !reflect.DeepEqual(c.Branches, tt.want) {
@@ -209,8 +225,36 @@ func Test_extractVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := extractVersion(tt.args.b); !got.Equal(tt.want) {
-				t.Errorf("extractVersion() = %v, want %v", got, tt.want)
+			if got := extractSemVersion(tt.args.b); !got.Equal(tt.want) {
+				t.Errorf("extractSemVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSemVersion(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+		err   bool
+	}{
+		{"empty string", "", "", true},
+		{"branch without name", "release/bj", "", true},
+		{"branch with version", "release/1.2.3", "1.2.3", false},
+		{"branch with version", "release/version_4.5.6", "4.5.6", false},
+		{"missing version", "version_", "", true},
+		{"missing version", "release", "", true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := SemVersion(test.input)
+			if (err != nil) != test.err {
+				t.Errorf("SemVersion() error = %v, want = %v", err, test.err)
+				return
+			}
+			if got != nil && got.String() != test.want {
+				t.Errorf("SemVersion() got = %v, want = %v", got, test.want)
 			}
 		})
 	}
