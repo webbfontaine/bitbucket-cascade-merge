@@ -182,6 +182,7 @@ func SemVersion(branch string) (*version.Version, error) {
 		if err == nil {
 			return semver, nil
 		}
+		return nil, err
 	}
 	return version.NewSemver(branch)
 }

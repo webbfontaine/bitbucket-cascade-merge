@@ -105,6 +105,40 @@ func TestCascade_Next(t *testing.T) {
 	}
 }
 
+func TestCascade_Append(t *testing.T) {
+	type fields struct {
+		BranchNames []string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   []string
+	}{
+		{name: "SortDevel",
+			fields: fields{BranchNames: []string{"devel"}},
+			want:   []string{"devel"},
+		},
+		{name: "SortDevel",
+			fields: fields{BranchNames: []string{"devel", "devel"}},
+			want:   []string{"devel"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cascade{
+				Branches: make([]string, 0),
+				Current:  0,
+			}
+			for _, n := range tt.fields.BranchNames {
+				c.Append(n)
+			}
+			if !reflect.DeepEqual(c.Branches, tt.want) {
+				t.Errorf("Next() = %v, want %v", c.Branches, tt.want)
+			}
+		})
+	}
+}
+
 func TestCascade_AppendSemVer(t *testing.T) {
 	type fields struct {
 		BranchNames []string
