@@ -79,19 +79,23 @@ func (c *Client) CascadeMerge(branchName string, options *CascadeOptions) *Casca
 
 		err = c.Reset(target)
 		if err != nil {
+			log.Printf("Unable to reset %s : %s", target, err)
 			return &CascadeMergeState{Source: source, Target: target, error: err}
 		}
 
 		err = c.MergeBranches(source, target)
 		if err != nil {
+			log.Printf("Unable to merge %s to %s : %s", source, target, err)
 			return &CascadeMergeState{Source: source, Target: target, error: err}
 		}
 
 		err := c.Push(target)
 		if err != nil {
+			log.Printf("Unable to push %s : %s", target, err)
 			return &CascadeMergeState{Source: source, Target: target, error: err}
 		}
 
+		log.Printf("Merged %s => %s", source, target)
 		source = target
 	}
 
