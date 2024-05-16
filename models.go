@@ -115,19 +115,28 @@ func (c *Cascade) Next() string {
 	return ""
 }
 
-// Add a branch to the cascade and sort branches. If the cascade already contains a branch named identically,
+// AppendSemVer Add a branch to the cascade and sort branches. If the cascade already contains a branch named identically,
 // the cascade will remain unmodified.
+func (c *Cascade) AppendSemVer(branchName string) {
+	for _, b := range c.Branches {
+		if b == branchName {
+			return
+		}
+	}
+	semVersion := extractSemVersion(branchName)
+	if semVersion.Original() != "0" {
+		c.Branches = append(c.Branches, branchName)
+		sort.Sort(BySemVersion(c.Branches))
+	}
+}
+
 func (c *Cascade) Append(branchName string) {
 	for _, b := range c.Branches {
 		if b == branchName {
 			return
 		}
 	}
-  version := extractVersion(branchName)
-  if version.Original() != "0" {
-    c.Branches = append(c.Branches, branchName)
-    sort.Sort(ByVersion(c.Branches))
-  }
+	c.Branches = append(c.Branches, branchName)
 }
 
 // Slice cascade branches to have only the target branch and its following branches.
@@ -148,13 +157,10 @@ func (c *Cascade) Slice(startBranch string) {
 //
 // The part following the slash must be an int.
 // It returns the version or Version("0") if it not complies to the format.
-func extractVersion(branch string) *version.Version {
-	parts := strings.Split(strings.ReplaceAll(branch, "version_", ""), "/")
-	if len(parts) > 0 {
-		semver, err := version.NewSemver(parts[len(parts)-1])
-		if err == nil {
-			return semver
-		}
+func extractSemVersion(branch string) *version.Version {
+	semver, err := SemVersion(branch)
+	if err == nil {
+		return semver
 	}
 
 	if branch == "devel" {
@@ -164,23 +170,35 @@ func extractVersion(branch string) *version.Version {
 		}
 	}
 
-	semver, _ := version.NewVersion("0")
+	semver, _ = version.NewVersion("0")
 
 	return semver
 }
 
-type ByVersion []string
+func SemVersion(branch string) (*version.Version, error) {
+	parts := strings.Split(strings.ReplaceAll(branch, "version_", ""), "/")
+	if len(parts) > 0 {
+		semver, err := version.NewSemver(parts[len(parts)-1])
+		if err == nil {
+			return semver, nil
+		}
+		return nil, err
+	}
+	return version.NewSemver(branch)
+}
 
-func (b ByVersion) Len() int {
+type BySemVersion []string
+
+func (b BySemVersion) Len() int {
 	return len(b)
 }
 
-func (b ByVersion) Swap(i, j int) {
+func (b BySemVersion) Swap(i, j int) {
 	b[i], b[j] = b[j], b[i]
 }
 
-func (b ByVersion) Less(i, j int) bool {
-	return extractVersion(b[i]).LessThan(extractVersion(b[j]))
+func (b BySemVersion) Less(i, j int) bool {
+	return extractSemVersion(b[i]).LessThan(extractSemVersion(b[j]))
 }
 
 func (r *Repository) URL(protocols ...string) (string, error) {
