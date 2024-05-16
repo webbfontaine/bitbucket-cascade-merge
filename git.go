@@ -294,19 +294,14 @@ func (c *Client) BuildCascade(options *CascadeOptions, startBranch string) (*Cas
 		return nil, err
 	}
 
-	semver, _ := SemVersion(startBranch)
-	if semver == nil {
-		cascade.Append(options.DevelopmentName)
-	} else {
-		err = iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
-			shorthand := branch.Shorthand()
-			branchName := strings.TrimPrefix(shorthand, DefaultRemoteName+"/")
-			if branchName == options.DevelopmentName || strings.HasPrefix(branchName, options.ReleasePrefix) {
-				cascade.AppendSemVer(branchName)
-			}
-			return nil
-		})
-	}
+	err = iterator.ForEach(func(branch *git.Branch, branchType git.BranchType) error {
+		shorthand := branch.Shorthand()
+		branchName := strings.TrimPrefix(shorthand, DefaultRemoteName+"/")
+		if branchName == options.DevelopmentName || strings.HasPrefix(branchName, options.ReleasePrefix) {
+			cascade.Append(branchName)
+		}
+		return nil
+	})
 
 	if err != nil {
 		return nil, err
