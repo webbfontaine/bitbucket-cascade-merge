@@ -18,19 +18,22 @@ You can show you interest and vote for this feature :
 * A service to host this service (eg. Amazon ECS)
 * An account on bitbucket.org with r/w privileges to the project
 
-### Get an Application Password
+### Get an API Token
 
-The application password will be used to call the Bitbucket API and fetch/push
-the repository.
+The API token will be used to call the Bitbucket API and fetch/push the
+repository.
 
-1. Open https://bitbucket.org/account/user/{{username}}
-2. Go to Access Management > App passwords
-3. Click on **Create an app password**
-4. Type a **label** and select the following permissions :
-   * Repositories : Read, Write
-   * Pull Requests : Read, Write
-5. Copy the password somewhere safe, you will need it later to configure
+1. Open https://id.atlassian.com/manage-profile/security/api-tokens
+2. Click on **Create API token with scopes** and select **Bitbucket**
+3. Type a **label**, pick an **expiry** and select the following scopes :
+   * `read:repository:bitbucket`, `write:repository:bitbucket`
+   * `read:pullrequest:bitbucket`, `write:pullrequest:bitbucket`
+4. Copy the token somewhere safe, you will need it later to configure
    environment variables
+
+App passwords used to fill this role, but Atlassian stops accepting them on
+2026-06-09 and removes them on 2026-07-28. Tokens expire (one year at most),
+so plan to rotate `BITBUCKET_PASSWORD` before yours lapses.
 
 ### Configure a webhook on the repository
 
@@ -48,12 +51,12 @@ of the `TOKEN` environment variable.
 
 The container can be configured with environment variable.
 
-| Key                | Default Value | Description                     |
-|--------------------|---------------|---------------------------------|
-| PORT               | 5000          | Server will listen on this port |
-| BITBUCKET_USERNAME |               | Bitbucket username              |
-| BITBUCKET_PASSWORD |               | Bitbucket app password          |
-| TOKEN              |               | Security token                  |
+| Key                | Default Value | Description                                                   |
+|--------------------|---------------|---------------------------------------------------------------|
+| PORT               | 5000          | Server will listen on this port                               |
+| BITBUCKET_USERNAME |               | `x-bitbucket-api-token-auth`, or your Atlassian account email |
+| BITBUCKET_PASSWORD |               | Bitbucket API token                                           |
+| TOKEN              |               | Security token                                                |
 
 
 
