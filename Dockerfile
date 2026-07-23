@@ -12,7 +12,7 @@ RUN go test
 RUN go build -o main .
 
 FROM alpine:edge
-RUN apk add --update-cache rm -rf /var/cache/apk/*
+RUN apk add --update-cache ca-certificates libssl3 libcrypto3 && rm -rf /var/cache/apk/*
 COPY --from=builder /usr/local/lib/pkgconfig/libgit2.pc /usr/local/lib/pkgconfig/libgit2.pc
 COPY --from=builder  /usr/local/lib/libgit2* /usr/local/lib/
 COPY --from=builder /build/main /
