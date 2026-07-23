@@ -54,9 +54,15 @@ The container can be configured with environment variable.
 | Key                | Default Value | Description                                                   |
 |--------------------|---------------|---------------------------------------------------------------|
 | PORT               | 5000          | Server will listen on this port                               |
-| BITBUCKET_USERNAME |               | `x-bitbucket-api-token-auth`, or your Atlassian account email |
+| BITBUCKET_USERNAME |               | Atlassian account email that owns the API token               |
 | BITBUCKET_PASSWORD |               | Bitbucket API token                                           |
 | TOKEN              |               | Security token                                                |
+
+`BITBUCKET_USERNAME` must be the email address of the Atlassian account
+that created the token (e.g. a service account like `ci@example.com`), not
+`x-bitbucket-api-token-auth`. Scoped API tokens are rejected with a 401
+(`API token must be used with an atlassian registered email`) unless the
+username is that account's email.
 
 
 
@@ -69,7 +75,7 @@ Was initially created by [Samuel Contesse](https://github.com/samcontesse).
 
 ```
 docker run \
-  -e BITBUCKET_USERNAME=<fillme> -e BITBUCKET_PASSWORD=<fillme> -e TOKEN=<fillme> \
+  -e BITBUCKET_USERNAME=you@example.com -e BITBUCKET_PASSWORD=<fillme> -e TOKEN=<fillme> \
   --publish 5000:5000 \
   --name bcm \
   morpheancloud/bitbucket-cascade-merge

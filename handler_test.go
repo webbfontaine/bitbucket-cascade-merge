@@ -76,6 +76,72 @@ func TestEventHandler_HandleBadRequest(t *testing.T) {
 	}
 }
 
+// The query token matches the configured one. We expect the next handler to run.
+func TestEventHandler_CheckTokenValid(t *testing.T) {
+	rr, called := tokenRequest("secret", "/hook?token=secret")
+
+	if !called {
+		t.Error("next handler must be called when the token matches")
+	}
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+}
+
+// The query token differs from the configured one. We expect a status 403.
+func TestEventHandler_CheckTokenInvalid(t *testing.T) {
+	rr, called := tokenRequest("secret", "/hook?token=wrong")
+
+	if called {
+		t.Error("next handler must not be called when the token differs")
+	}
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusForbidden)
+	}
+}
+
+// A token is configured but the query has none. We expect a status 403.
+func TestEventHandler_CheckTokenMissing(t *testing.T) {
+	rr, called := tokenRequest("secret", "/hook")
+
+	if called {
+		t.Error("next handler must not be called when the token is missing")
+	}
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusForbidden)
+	}
+}
+
+// No token is configured, so the endpoint is open. Documents the default.
+func TestEventHandler_CheckTokenNotConfigured(t *testing.T) {
+	_, called := tokenRequest("", "/hook")
+
+	if !called {
+		t.Error("next handler must be called when no token is configured")
+	}
+}
+
+func tokenRequest(token, target string) (*httptest.ResponseRecorder, bool) {
+	called := false
+	next := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		called = true
+	})
+
+	eh := EventHandler{channel: make(chan PullRequestEvent, 1)}
+	req := httptest.NewRequest("POST", target, nil)
+
+	rr := httptest.NewRecorder()
+	eh.CheckToken(token, next).ServeHTTP(rr, req)
+
+	return rr, called
+}
+
 func request(filename string, hf http.Handler) (*httptest.ResponseRecorder, error) {
 	file, _ := os.Open(filename)
 	req, err := http.NewRequest("POST", "/hook", file)

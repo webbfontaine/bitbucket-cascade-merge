@@ -14,12 +14,19 @@ func main() {
 	events := make(chan PullRequestEvent, 100)
 	go worker(events)
 
-	log.Printf("Server running on port %s, using token : %s", getEnv("PORT", "5000"), getEnv("TOKEN", ""))
+	port := getEnv("PORT", "5000")
+	token := getEnv("TOKEN", "")
+
+	if token == "" {
+		log.Print("TOKEN is empty, every request to the webhook will be accepted")
+	}
+
+	log.Printf("Server running on port %s", port)
 
 	// start the hook listener
 	handler := NewEventHandler(events)
-	addr := fmt.Sprintf(":%s", getEnv("PORT", "5000"))
-	http.Handle("/", handler.CheckToken(getEnv("TOKEN", ""), handler.Handle()))
+	addr := fmt.Sprintf(":%s", port)
+	http.Handle("/", handler.CheckToken(token, handler.Handle()))
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		log.Fatalf("cannot start server on %s", addr)

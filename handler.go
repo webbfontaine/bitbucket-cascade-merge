@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -39,8 +40,9 @@ func (e EventHandler) Handle() http.Handler {
 
 func (e EventHandler) CheckToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if token != request.URL.Query().Get("token") {
-			log.Printf("Wrong token : %s != %s", token, request.URL.Query().Get("token"))
+		given := request.URL.Query().Get("token")
+		if subtle.ConstantTimeCompare([]byte(token), []byte(given)) != 1 {
+			log.Printf("Wrong token, rejecting request from %s", request.RemoteAddr)
 			writer.WriteHeader(http.StatusForbidden)
 			return
 		}
