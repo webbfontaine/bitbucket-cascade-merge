@@ -40,7 +40,9 @@ func worker(event <-chan PullRequestEvent) {
 
 		log.Printf("Processing cascade merge for %s from %s to %s", e.Repository.Name, e.PullRequest.Source.Branch.Name, e.PullRequest.Destination.Branch.Name)
 
-		// retrieve auth from environment
+		// retrieve auth from environment. username (the token owner's Atlassian
+		// email) authenticates the REST API; git-over-HTTPS uses a fixed username
+		// instead (see GitAPITokenUsername).
 		username := getEnv("BITBUCKET_USERNAME", "")
 		password := getEnv("BITBUCKET_PASSWORD", "")
 
@@ -56,7 +58,7 @@ func worker(event <-chan PullRequestEvent) {
 			Path: filepath.Join(os.TempDir(), e.Repository.Uuid),
 			URL:  url,
 			Credentials: &Credentials{
-				Username: username,
+				Username: GitAPITokenUsername,
 				Password: password,
 			},
 		})

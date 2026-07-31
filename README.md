@@ -60,9 +60,15 @@ The container can be configured with environment variable.
 
 `BITBUCKET_USERNAME` must be the email address of the Atlassian account
 that created the token (e.g. a service account like `ci@example.com`), not
-`x-bitbucket-api-token-auth`. Scoped API tokens are rejected with a 401
-(`API token must be used with an atlassian registered email`) unless the
-username is that account's email.
+`x-bitbucket-api-token-auth`. Scoped API tokens are rejected by the REST API
+with a 401 (`API token must be used with an atlassian registered email`)
+unless the username is that account's email.
+
+Note: the git-over-HTTPS operations (clone/fetch/push) require a *different*
+username than the REST API — Bitbucket rejects the email there. The service
+handles this internally by authenticating git with the fixed username
+`x-bitbucket-api-token-auth` and the same token, so you only need to
+configure `BITBUCKET_USERNAME` with the email.
 
 
 

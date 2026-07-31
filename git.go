@@ -22,6 +22,12 @@ type Client struct {
 	Author          *Author
 }
 
+// GitAPITokenUsername is the username Bitbucket requires for git-over-HTTPS
+// operations (clone/fetch/push) authenticated with an Atlassian API token.
+// The REST API instead requires the token owner's account email, passed via
+// BITBUCKET_USERNAME. A single username cannot satisfy both endpoints.
+const GitAPITokenUsername = "x-bitbucket-api-token-auth"
+
 type Credentials struct {
 	Username string
 	Password string
